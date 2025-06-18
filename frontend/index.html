@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netvanguard - Webpage Creator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-darker.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+</head>
+<body>
+    <div class="view-transition-container">
+        <div class="app-container">
+            <!-- Navigation Header -->
+            <header class="app-header">
+                <div class="logo">
+                    <img src="assets/logo.svg" alt="Netvanguard Logo">
+                </div>
+                <div class="progress-indicator" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="3">
+                    <div class="step active" data-step="1" aria-current="step">Choose Template</div>
+                    <div class="step" data-step="2">Customize</div>
+                    <div class="step" data-step="3">Export</div>
+                </div>
+            </header>
+            
+            <!-- Main Content Area -->
+            <main class="app-main">
+                <!-- Template Selection View -->
+                <section class="template-view active-view" id="templateView">
+                    <div class="container">
+                        <h1 class="title animate-fade-in">Create Your Perfect Website</h1>
+                        <div class="grid animate-slide-up">
+                            <!-- Landing Page Card -->
+                            <div class="card template-card" data-id="landing">
+                                <div class="icon">🚀</div>
+                                <h3>Landing Page</h3>
+                                <p>Convert visitors into customers with a stunning single-page design</p>
+                            </div>
+
+                            <!-- E-commerce Card -->
+                            <div class="card template-card" data-id="ecommerce">
+                                <div class="icon">🛒</div>
+                                <h3>E-commerce</h3>
+                                <p>Build your online store with product listings and checkout system</p>
+                            </div>
+
+                            <!-- Blog Card -->
+                            <div class="card template-card" data-id="blog">
+                                <div class="icon">📝</div>
+                                <h3>Blog</h3>
+                                <p>Start sharing your ideas with a modern content platform</p>
+                            </div>
+
+                            <!-- Portfolio Card -->
+                            <div class="card template-card" data-id="portfolio">
+                                <div class="icon">🎨</div>
+                                <h3>Portfolio</h3>
+                                <p>Showcase your work with elegant galleries and project showcases</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Customization View -->
+                <section class="customize-view" id="customizeView">
+                    <div class="view-header">
+                        <button class="back-button" id="backButton" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                            Back to Templates
+                        </button>
+                        <h1 class="view-title">Customize Your <span id="templateName">Website</span></h1>
+                    </div>
+                    
+                    <div class="customization-container">
+                        <div class="preview-pane">
+                            <div class="preview-header">
+                                <h3>Live Preview</h3>
+                                <div class="device-toggle">
+                                    <button class="device-btn active" data-device="desktop" type="button">Desktop</button>
+                                    <button class="device-btn" data-device="tablet" type="button">Tablet</button>
+                                    <button class="device-btn" data-device="mobile" type="button">Mobile</button>
+                                </div>
+                            </div>
+                            <div class="preview-content" id="previewContent">
+                                <!-- Preview will be rendered here -->
+                            </div>
+                        </div>
+                        
+                        <div class="options-pane">
+                            <div class="options-tabs">
+                                <button class="tab-btn active" data-tab="style" type="button">Style</button>
+                                <button class="tab-btn" data-tab="content" type="button">Content</button>
+                                <button class="tab-btn" data-tab="features" type="button">Features</button>
+                            </div>
+                            
+                            <div class="tab-content active" data-tab="style" id="styleTab">
+                                <!-- Style options will be injected here -->
+                            </div>
+                            
+                            <div class="tab-content" data-tab="content">
+                                <div class="option-group">
+                                    <label for="siteTitle">Website Title</label>
+                                    <input type="text" id="siteTitle" placeholder="Enter website title">
+                                </div>
+                                <div class="option-group">
+                                    <label for="siteTagline">Tagline</label>
+                                    <input type="text" id="siteTagline" placeholder="Enter tagline">
+                                </div>
+                                <div class="option-group">
+                                    <label for="primaryColor">Primary Color</label>
+                                    <input type="color" id="primaryColor" value="#6366f1">
+                                </div>
+                            </div>
+                            
+                            <div class="tab-content" data-tab="features" id="featuresTab">
+                                <!-- Features will be injected here -->
+                            </div>
+                            
+                            <button class="generate-button" id="generateButton" type="button">
+                                Generate Website
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Editor View -->
+                <section class="editor-view" id="editorView">
+                    <div class="view-header">
+                        <button class="back-button" id="editorBackButton" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                            Back to Customize
+                        </button>
+                        <h1 class="view-title">Edit Your Website Code</h1>
+                    </div>
+                    
+                    <div class="editor-container">
+                        <div class="editor-toolbar">
+                            <button id="htmlTab" class="editor-tab active" type="button">HTML</button>
+                            <button id="cssTab" class="editor-tab" type="button">CSS</button>
+                            <button id="jsTab" class="editor-tab" type="button">JS</button>
+                            <button id="previewTab" class="editor-tab" type="button">Preview</button>
+                        </div>
+                        
+                        <div class="editor-content">
+                            <div id="htmlEditor" class="code-editor active"></div>
+                            <div id="cssEditor" class="code-editor"></div>
+                            <div id="jsEditor" class="code-editor"></div>
+                            <iframe id="livePreview" class="code-editor" title="Live website preview"></iframe>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-actions">
+                        <button id="saveTemplateButton" class="generate-button" type="button">
+                            Save as Template
+                        </button>
+                        <button id="downloadFinalButton" class="generate-button" type="button">
+                            Download Final Website
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </section>
+            </main>
+           
+            <!-- Footer -->
+            <footer class="app-footer">
+                <p>© 2025 Netvanguard | Build Beautiful Websites in Minutes</p>
+            </footer>
+        </div>
+    </div>
+    
+    <script src="js/app.js"></script>
+</body>
+</html>
