@@ -78,6 +78,13 @@ let editor = {
 
 // Initialize the app
 function initApp() {
+  // Verificar si el usuario ha iniciado sesión
+    const isLoggedIn = sessionStorage.getItem('loggedIn') === 'true';
+    if (!isLoggedIn) {
+        alert('Debes iniciar sesión para acceder');
+        window.location.href = 'landpage.html';
+        return;
+    }
   renderTemplates();
   setupEventListeners();
   initEditor();
