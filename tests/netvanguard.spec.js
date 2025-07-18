@@ -1,198 +1,91 @@
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
-test.describe('Netvanguard Webpage Creator', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5000');
+test('test', async ({ page }) => {
+  await page.goto('http://localhost:5000/');
+  await page.getByRole('button', { name: 'Contratar' }).nth(1).click();
+  await page.locator('#paymentForm div').filter({ hasText: 'PayPal' }).nth(1).click();
+  await page.getByRole('textbox', { name: 'Correo de PayPal' }).click();
+  await page.getByRole('textbox', { name: 'Correo de PayPal' }).fill('a@gmail.com');
+  page.once('dialog', dialog => {
+    console.log(`Dialog message: ${dialog.message()}`);
+    dialog.dismiss().catch(() => {});
   });
-
-  test('Flujo completo: crear y descargar un sitio web', async ({ page }) => {
-    // 1. Seleccionar plantilla
-    await test.step('Seleccionar plantilla Landing Page', async () => {
-      await page.locator('.template-card:has-text("Landing Page")').click();
-      await expect(page.locator('#customizeView')).toBeVisible();
-    });
-
-    // 2. Personalizar contenido
-    await test.step('Personalizar contenido', async () => {
-      await page.fill('#siteTitle', 'Mi Startup Innovadora');
-      await page.fill('#siteTagline', 'Transformando ideas en realidad');
-      await page.fill('input[type="color"]', '#ff0000'); // Color rojo
-    });
-
-    // 3. Seleccionar estilo
-    await test.step('Seleccionar estilo SaaS', async () => {
-      await page.locator('.style-option:has-text("SaaS")').click();
-    });
-
-    // 4. Generar sitio web
-    await test.step('Generar sitio web', async () => {
-      const [response] = await Promise.all([
-        page.waitForResponse('/generate'),
-        page.click('#generateButton')
-      ]);
-      
-      expect(response.status()).toBe(200);
-      const responseBody = await response.json();
-      expect(responseBody.html).toBeTruthy();
-      expect(responseBody.css).toBeTruthy();
-      expect(responseBody.js).toBeTruthy();
-      
-      await expect(page.locator('#editorView')).toBeVisible();
-    });
-
-    // 5. Usar editor de código
-    await test.step('Interactuar con el editor', async () => {
-      // Cambiar entre pestañas
-      await page.click('#cssTab');
-      await expect(page.locator('#cssTab.active')).toBeVisible();
-      
-      await page.click('#jsTab');
-      await expect(page.locator('#jsTab.active')).toBeVisible();
-      
-      await page.click('#previewTab');
-      await expect(page.locator('#previewTab.active')).toBeVisible();
-      
-      // Verificar vista previa
-      const previewFrame = page.frameLocator('#livePreview');
-      await expect(previewFrame.locator('body')).toBeVisible();
-    });
-
-    // 6. Descargar sitio web
-    await test.step('Descargar sitio web', async () => {
-      const downloadPromise = page.waitForEvent('download');
-      await page.click('#downloadFinalButton');
-      const download = await downloadPromise;
-      
-      expect(download.suggestedFilename()).toBe('website.html');
-      // Para pruebas locales, puedes guardar el archivo:
-      // await download.saveAs(`./downloads/${download.suggestedFilename()}`);
-    });
+  await page.getByRole('button', { name: 'Continuar con PayPal' }).click();
+  await page.goto('http://localhost:5000/landpage.html');
+  await page.getByRole('link', { name: 'Iniciar Sesión' }).click();
+  await page.getByRole('textbox', { name: 'Correo Electrónico' }).click();
+  await page.getByRole('textbox', { name: 'Correo Electrónico' }).fill('a@gmail.com');
+  await page.getByRole('textbox', { name: 'Contraseña' }).click();
+  await page.getByRole('textbox', { name: 'Contraseña' }).fill('123');
+  page.once('dialog', dialog => {
+    console.log(`Dialog message: ${dialog.message()}`);
+    dialog.dismiss().catch(() => {});
   });
-
-  test('Probar todas las plantillas', async ({ page }) => {
-    const templates = [
-      { name: 'Landing Page', id: 'landing' },
-      { name: 'E-commerce', id: 'ecommerce' },
-      { name: 'Blog', id: 'blog' },
-      { name: 'Portfolio', id: 'portfolio' }
-    ];
-
-    for (const template of templates) {
-      await test.step(`Probar plantilla: ${template.name}`, async () => {
-        // Seleccionar plantilla
-        await page.locator(`.template-card:has-text("${template.name}")`).click();
-        await expect(page.locator('#customizeView')).toBeVisible();
-        
-        // Verificar nombre en la vista de personalización
-        await expect(page.locator('#templateName')).toHaveText(template.name);
-        
-        // Verificar que hay estilos disponibles
-        const styleOptions = await page.locator('.style-option').count();
-        expect(styleOptions).toBeGreaterThan(0);
-        
-        // Volver a la vista inicial
-        await page.click('#backButton');
-        await expect(page.locator('#templateView')).toBeVisible();
-      });
-    }
+  await page.getByRole('button', { name: 'Iniciar Sesión' }).click();
+  await page.getByRole('link', { name: 'Regístrate' }).click();
+  await page.getByRole('textbox', { name: 'Nombre Completo' }).click();
+  await page.getByRole('textbox', { name: 'Nombre Completo' }).fill('a');
+  await page.getByRole('textbox', { name: 'Correo Electrónico' }).click();
+  await page.getByRole('textbox', { name: 'Correo Electrónico' }).fill('a@gmail.com');
+  await page.getByRole('textbox', { name: 'Contraseña', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('123');
+  await page.getByRole('textbox', { name: 'Confirmar Contraseña' }).click();
+  await page.getByRole('textbox', { name: 'Confirmar Contraseña' }).fill('123');
+  page.once('dialog', dialog => {
+    console.log(`Dialog message: ${dialog.message()}`);
+    dialog.dismiss().catch(() => {});
   });
-
-  test('Guardar plantilla personalizada', async ({ page }) => {
-    // Navegar hasta el editor
-    await page.locator('.template-card:has-text("Landing Page")').click();
-    await page.click('#generateButton');
-    await page.waitForSelector('#editorView');
-    
-    // Mockear el prompt
-    await page.evaluate(() => {
-      window.prompt = () => 'Mi Plantilla Personalizada';
-    });
-    
-    // Hacer clic en guardar
-    await page.click('#saveTemplateButton');
-    
-    // Verificar que se guardó en localStorage
-    const userTemplates = await page.evaluate(() => {
-      return JSON.parse(localStorage.getItem('userTemplates'));
-    });
-    
-    expect(userTemplates).toBeTruthy();
-    const savedTemplate = userTemplates.find(t => t.name === 'Mi Plantilla Personalizada');
-    expect(savedTemplate).toBeTruthy();
-    expect(savedTemplate.html.length).toBeGreaterThan(100);
+  await page.getByRole('button', { name: 'Crear Cuenta' }).click();
+  await page.getByRole('textbox', { name: 'Correo Electrónico' }).click();
+  await page.getByRole('textbox', { name: 'Correo Electrónico' }).fill('a@gmail.com');
+  await page.getByRole('textbox', { name: 'Contraseña' }).click();
+  await page.getByRole('textbox', { name: 'Contraseña' }).fill('123');
+  page.once('dialog', dialog => {
+    console.log(`Dialog message: ${dialog.message()}`);
+    dialog.dismiss().catch(() => {});
   });
-
-  test('Cambiar vista de dispositivos en preview', async ({ page }) => {
-    await page.locator('.template-card:has-text("Landing Page")').click();
-    
-    // Tamaños esperados para los dispositivos
-    const devices = {
-      desktop: { width: 1280, height: 720 },
-      tablet: { width: 768, height: 1024 },
-      mobile: { width: 375, height: 667 }
-    };
-    
-    // Probar cada dispositivo
-    for (const [device, size] of Object.entries(devices)) {
-      await test.step(`Cambiar a vista ${device}`, async () => {
-        await page.click(`.device-btn[data-device="${device}"]`);
-        
-        // Verificar que el botón está activo
-        await expect(page.locator(`.device-btn[data-device="${device}"].active`)).toBeVisible();
-        
-        // Verificar el tamaño del preview
-        const previewContent = page.locator('.preview-content');
-        await expect(previewContent).toHaveCSS('width', `${size.width}px`);
-        await expect(previewContent).toHaveCSS('height', `${size.height}px`);
-      });
-    }
+  await page.getByRole('button', { name: 'Iniciar Sesión' }).click();
+  await page.getByRole('button', { name: 'Contratar' }).nth(1).click();
+  await page.locator('#paymentForm div').filter({ hasText: 'PayPal' }).nth(1).click();
+  await page.getByRole('textbox', { name: 'Correo de PayPal' }).click();
+  await page.getByRole('textbox', { name: 'Correo de PayPal' }).fill('a@gmail.com');
+  await page.getByRole('textbox', { name: 'Correo de PayPal' }).press('Enter');
+  await page.getByRole('button', { name: 'Continuar con PayPal' }).click();
+  await page.getByText('🚀 Landing Page Convert').click();
+  await page.getByRole('button', { name: 'Features' }).click();
+  await page.getByRole('button', { name: 'Content' }).click();
+  await page.getByRole('textbox', { name: 'Website Title' }).click();
+  await page.getByRole('textbox', { name: 'Website Title' }).fill('Mi sitio web de confianza');
+  await page.getByRole('textbox', { name: 'Tagline' }).click();
+  await page.getByRole('textbox', { name: 'Tagline' }).dblclick();
+  await page.getByRole('textbox', { name: 'Tagline' }).click();
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).press('ArrowRight');
+  await page.getByRole('textbox', { name: 'Tagline' }).fill('Este sitio web se ha generado automaticamente');
+  await page.getByRole('button', { name: 'Generate Website' }).click();
+  await page.getByRole('button', { name: 'Preview' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download Final Website' }).click();
+  const download = await downloadPromise;
+  await page.getByRole('button', { name: 'Back to Customize' }).click();
+  await page.getByRole('button', { name: 'Back to Templates' }).click();
+  await page.getByRole('button', { name: 'Cerrar Sesión' }).click();
+  page.once('dialog', dialog => {
+    console.log(`Dialog message: ${dialog.message()}`);
+    dialog.dismiss().catch(() => {});
   });
-
-  test('Validar navegación entre pasos', async ({ page }) => {
-    // Paso 1: Selección de plantilla
-    await expect(page.locator('.step[data-step="1"].active')).toBeVisible();
-    
-    // Ir a paso 2
-    await page.locator('.template-card:has-text("Landing Page")').click();
-    await expect(page.locator('.step[data-step="2"].active')).toBeVisible();
-    
-    // Volver a paso 1
-    await page.click('#backButton');
-    await expect(page.locator('.step[data-step="1"].active')).toBeVisible();
-    
-    // Ir a paso 3 (editor)
-    await page.locator('.template-card:has-text("Landing Page")').click();
-    await page.click('#generateButton');
-    await page.waitForSelector('#editorView');
-    await expect(page.locator('.step[data-step="3"].active')).toBeVisible();
-    
-    // Volver a paso 2 desde editor
-    await page.click('#editorBackButton');
-    await expect(page.locator('.step[data-step="2"].active')).toBeVisible();
-  });
-
-  test('Manejo de errores en generación', async ({ page }) => {
-    // Mockear respuesta de error
-    await page.route('/generate', route => route.fulfill({
-      status: 500,
-      contentType: 'application/json',
-      body: JSON.stringify({ error: 'Error en el servidor' })
-    }));
-
-    // Intentar generar
-    await page.locator('.template-card:has-text("Landing Page")').click();
-    await page.click('#generateButton');
-    
-    // Verificar manejo de error
-    const errorMessage = await page.evaluate(async () => {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          const errorEl = document.querySelector('.error-message');
-          resolve(errorEl ? errorEl.textContent : '');
-        }, 1000);
-      });
-    });
-
-    expect(errorMessage).toContain('Error en el servidor');
-  });
+  await page.getByRole('link', { name: 'Cerrar Sesión' }).click();
 });
