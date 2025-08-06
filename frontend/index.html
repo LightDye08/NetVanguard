@@ -45,11 +45,15 @@
 </button>
 
 <script>
+// Función para cerrar sesión
 function logoutUser() {
-    // Aquí puedes agregar lógica para cerrar sesión, limpiar datos, etc.
-
-    // Redirigir a landpage.html
-    window.location.href = 'landpage.html';
+    fetch('/api/logout')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/';
+        }
+    });
 }
 </script>
 
@@ -215,5 +219,23 @@ function logoutUser() {
     </div>
     
     <script src="js/app.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar estado del usuario al entrar a la aplicación
+    fetch('/api/user-status')
+    .then(response => response.json())
+    .then(data => {
+        if (!data.logged_in) {
+            window.location.href = '/';
+        } else if (!data.user.plan) {
+            alert('Para usar la aplicación, primero debes adquirir un plan');
+            window.location.href = '/pricing';
+        } else {
+            // Inicializar la aplicación si todo está bien
+            initApp();
+        }
+    });
+});
+</script>
 </body>
 </html>
