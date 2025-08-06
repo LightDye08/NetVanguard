@@ -78,19 +78,49 @@ let editor = {
 
 // Initialize the app
 function initApp() {
-  // Verificar si el usuario ha iniciado sesión
-    const isLoggedIn = sessionStorage.getItem('loggedIn') === 'true';
-    if (!isLoggedIn) {
-        alert('Debes iniciar sesión para acceder');
-        window.location.href = 'landpage.html';
-        return;
-    }
-  renderTemplates();
-  setupEventListeners();
-  initEditor();
-  // Set default values for content
-  document.getElementById('siteTitle').value = 'My Awesome Website';
-  document.getElementById('siteTagline').value = 'A stunning website created with Netvanguard';
+    // Verificar estado del usuario con el backend
+    fetch('/api/user-status')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.logged_in) {
+                alert('Debes iniciar sesión para acceder');
+                window.location.href = 'landpage.html';
+                return;
+            }
+            
+            if (!data.user.plan) {
+                alert('Debes adquirir un plan para usar la aplicación');
+                window.location.href = '/pricing';
+                return;
+            }
+            
+            // Si el usuario está autenticado y tiene plan, inicializar la aplicación
+            renderTemplates();
+            setupEventListeners();
+            initEditor();
+            document.getElementById('siteTitle').value = 'My Awesome Website';
+            document.getElementById('siteTagline').value = 'A stunning website created with Netvanguard';
+        })
+        .catch(error => {
+            console.error('Error al verificar el estado del usuario:', error);
+            alert('Error al verificar el estado de la sesión');
+            window.location.href = 'landpage.html';
+        });
+}
+
+
+// Función para cerrar sesión en la aplicación principal
+function logoutUser() {
+    fetch('/api/logout')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Limpiar sessionStorage
+            sessionStorage.removeItem('currentUser');
+            // Redirigir a la página principal
+            window.location.href = '/';
+        }
+    });
 }
 
 function initEditor() {
