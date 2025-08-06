@@ -77,6 +77,17 @@ function switchPaymentMethod(method) {
     document.getElementById(`${method}Form`).classList.add('active');
 }
 
+function checkUserStatus() {
+    fetch('/api/user-status')
+    .then(response => response.json())
+    .then(data => {
+        if (data.logged_in) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+        }
+    });
+}
+
 // Obtener planes de un usuario específico
 function getPlansForUser(userEmail) {
     const userPlans = JSON.parse(localStorage.getItem('userPlans')) || {};
@@ -117,20 +128,11 @@ function updatePlanButtons() {
         const planName = card.querySelector('h3').textContent;
         const button = card.querySelector('button');
         
-        if (currentUser) {
-            const userPlans = getPlansForUser(currentUser.email);
-            
-            if (userPlans.includes(planName)) {
-                button.textContent = 'Usar';
-                button.onclick = function() {
-                    window.location.href = 'index.html';
-                };
-            } else {
-                button.textContent = 'Contratar';
-                button.onclick = function() {
-                    openPayment(planName, getPlanPrice(planName));
-                };
-            }
+        if (currentUser && currentUser.plan === planName) {
+            button.textContent = 'Usar';
+            button.onclick = function() {
+                window.location.href = '/app';
+            };
         } else {
             button.textContent = 'Contratar';
             button.onclick = function() {
@@ -140,66 +142,168 @@ function updatePlanButtons() {
     });
 }
 
-function processPayment(method) {
-    // Get form values
-    let name, email;
+// Registro de usuario
+function registerUser() {
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const confirm = document.getElementById('registerConfirm').value;
     
-    if (method === 'creditCard') {
-        name = document.getElementById('name').value;
-        email = document.getElementById('email').value;
-        const cardNumber = document.getElementById('cardNumber').value;
-        
-        // Simple validation
-        if(!name || !email || !cardNumber) {
-            alert('Por favor, complete todos los campos requeridos.');
-            return;
-        }
-        
-        if(cardNumber.replace(/\s/g, '').length !== 16) {
-            alert('Por favor, ingrese un número de tarjeta válido de 16 dígitos.');
-            return;
-        }
-    } else if (method === 'paypal') {
-        email = document.getElementById('paypalEmail').value;
-        if (!email) {
-            alert('Por favor, ingrese su correo de PayPal.');
-            return;
-        }
-        name = "Cliente PayPal";
-    } else if (method === 'mercadopago') {
-        email = document.getElementById('mercadopagoEmail').value;
-        if (!email) {
-            alert('Por favor, ingrese su correo de MercadoPago.');
-            return;
-        }
-        name = "Cliente MercadoPago";
+    if (password !== confirm) {
+        alert('Las contraseñas no coinciden');
+        return;
     }
     
-    // Get redirect URL
-    const redirectUrl = document.getElementById('redirectUrl').value;
-    
-    // Generate random transaction ID
-    const transactionId = Math.floor(1000 + Math.random() * 9000);
-    document.getElementById('transactionId').textContent = transactionId;
-    
-    // Show success message
-    document.getElementById('paymentForm').style.display = 'none';
-    document.getElementById('paymentSuccess').style.display = 'block';
-    
-    // Registrar plan para el usuario si está autenticado
-    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    if (currentUser && currentPlan !== 'Consulta') {
-        storePlanForUser(currentPlan, currentUser.email);
-        updatePlanButtons();
-    }
-    
-    // Simulate redirection after 3 seconds
-    setTimeout(() => {
-        if (redirectUrl) {
-            window.location.href = redirectUrl;
+    fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, email, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+            closeLogin();
+            alert('Registro exitoso! Ahora puedes seleccionar un plan.');
+        } else {
+            alert(data.error || 'Error al registrar');
         }
-    }, 3000);
+    });
 }
+
+// Función para desplazarse a la sección de precios - (Bajo Revision)
+function scrollToPricing() {
+    const pricingSection = document.getElementById('pricing');
+    if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Al cargar la página, verificar si debemos mostrar precios
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si venimos de registro
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('show') === 'pricing') {
+        setTimeout(scrollToPricing, 500);
+    }
+
+});
+
+// Inicio de sesión
+function loginUser() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+            closeLogin();
+            
+            if (data.user.plan) {
+                alert('Sesión iniciada. Ya tienes un plan activo.');
+            } else {
+                alert('Sesión iniciada. Ahora puedes seleccionar un plan.');
+            }
+        } else {
+            alert(data.error || 'Credenciales incorrectas');
+        }
+    });
+}
+
+// Función optimizada para verificar estado de usuario
+function checkUserStatus() {
+    // Verificar si ya tenemos el estado en caché
+    const cachedStatus = sessionStorage.getItem('userStatus');
+    if (cachedStatus) {
+        const data = JSON.parse(cachedStatus);
+        updateUIAndRedirect(data);
+        return;
+    }
+
+    fetch('/api/user-status')
+    .then(response => {
+        if (!response.ok) throw new Error('Error en estado de usuario');
+        return response.json();
+    })
+    .then(data => {
+        // Almacenar en caché por 5 segundos
+        sessionStorage.setItem('userStatus', JSON.stringify(data));
+        setTimeout(() => {
+            sessionStorage.removeItem('userStatus');
+        }, 5000);
+        
+        updateUIAndRedirect(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        updateUserUI(null);
+    });
+}
+
+// Función para actualizar UI y manejar redirecciones
+function updateUIAndRedirect(data) {
+    if (data.logged_in) {
+        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+        updateUserUI(data.user);
+        updatePlanButtons();
+        
+        // Redirigir solo si es necesario
+        const currentPath = window.location.pathname;
+        if (data.user.plan && currentPath !== '/app') {
+            window.location.href = '/app';
+        } else if (!data.user.plan && currentPath !== '/pricing') {
+            window.location.href = '/pricing';
+        }
+    } else {
+        updateUserUI(null);
+        // Solo redirigir desde rutas protegidas
+        const currentPath = window.location.pathname;
+        if (currentPath === '/app' || currentPath === '/pricing') {
+            window.location.href = '/';
+        }
+    }
+}
+
+// Función para procesar pagos
+function processPayment(method) {
+    const plan = document.getElementById('selectedPlan').textContent;
+
+    fetch('/api/process-payment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ plan })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar UI con nuevo plan
+            const user = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (user) {
+                user.plan = plan;
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                updateUserUI(user);
+                updatePlanButtons();
+            }
+            
+            // Mostrar éxito
+            document.getElementById('paymentForm').style.display = 'none';
+            document.getElementById('paymentSuccess').style.display = 'block';
+            
+            // Generar ID de transacción ficticio
+            const transactionId = 'WEB-' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('transactionId').textContent = transactionId;
+        }
+    });
+}
+
 
 // Close modal when clicking outside of it
 window.onclick = function(event) {
@@ -271,28 +375,37 @@ function registerUser() {
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     const confirm = document.getElementById('registerConfirm').value;
+
+    sessionStorage.removeItem('statusChecked');
     
     if (password !== confirm) {
         alert('Las contraseñas no coinciden');
         return;
     }
     
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    if (users.some(user => user.email === email)) {
-        alert('Este correo ya está registrado');
-        return;
-    }
-    
-    users.push({
-        name,
-        email,
-        password
+    fetch('/api/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Guardar usuario en sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+            // Redirigir a la aplicación principal
+            window.location.href = '/app';
+        } else {
+            alert(data.error || 'Error al registrar');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar');
     });
-    
-    localStorage.setItem('users', JSON.stringify(users));
-    alert('¡Registro exitoso! Ahora puedes iniciar sesión');
-    showLoginView(); // Cambiar a vista de login después de registro
 }
 
 // Inicio de sesión
@@ -300,92 +413,244 @@ function loginUser() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.email === email && u.password === password);
+    fetch('/api/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Guardar usuario en sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+            
+            // Redirigir según si tiene plan o no
+            if (data.user.plan) {
+                window.location.href = data.redirect || '/app';
+            } else {
+                // Mostrar sección de precios
+                window.location.href = '/pricing';
+                setTimeout(scrollToPricing, 500);
+            }
+        } else {
+            alert(data.error || 'Credenciales incorrectas');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al iniciar sesión');
+    });
+}
+
+// Función para cerrar sesión
+function logoutUser() {
+    fetch('/api/logout')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.removeItem('currentUser');
+            updateUserUI(null);
+            alert('Sesión cerrada correctamente');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cerrar sesión');
+    });
+}
+
+// Al cargar la página, solo actualizar UI
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar estado del usuario solo para actualizar UI
+    fetch('/api/user-status')
+    .then(response => response.json())
+    .then(data => {
+        if (data.logged_in) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+        }
+    });
     
-    if (user) {
-        sessionStorage.setItem('loggedIn', 'true');
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
-        alert(`¡Bienvenido ${user.name}!`);
-        closeLogin();
-        updateUserUI();
-    } else {
-        alert('Credenciales incorrectas');
+    // Agregar event listener al botón de login
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openLogin();
+        });
+    }
+});
+
+// Función optimizada para verificar estado de usuario
+function checkUserStatus() {
+    // Verificar si ya tenemos el estado en caché
+    const cachedStatus = sessionStorage.getItem('userStatus');
+    if (cachedStatus) {
+        const data = JSON.parse(cachedStatus);
+        updateUIAndRedirect(data);
+        return;
+    }
+
+    fetch('/api/user-status')
+    .then(response => {
+        if (!response.ok) throw new Error('Error en estado de usuario');
+        return response.json();
+    })
+    .then(data => {
+        // Almacenar en caché por 5 segundos
+        sessionStorage.setItem('userStatus', JSON.stringify(data));
+        setTimeout(() => {
+            sessionStorage.removeItem('userStatus');
+        }, 5000);
+        
+        updateUIAndRedirect(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        updateUserUI(null);
+    });
+}
+
+
+// Actualizar la función updateUIAndRedirect
+function updateUIAndRedirect(data) {
+    // Solo procesar si no hemos verificado antes
+    if (sessionStorage.getItem('statusChecked') !== 'true') {
+        if (data.logged_in) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+            
+            if (data.user.plan && window.location.pathname !== '/app') {
+                window.location.href = '/app';
+            } else if (!data.user.plan && window.location.pathname !== '/pricing') {
+                window.location.href = '/pricing';
+            }
+        } else {
+            updateUserUI(null);
+            if (window.location.pathname === '/app' || window.location.pathname === '/pricing') {
+                window.location.href = '/';
+            }
+        }
+        sessionStorage.setItem('statusChecked', 'true');
     }
 }
 
-// Mostrar vista de login
+// Actualizar UI con datos de usuario
+// Función para actualizar UI con datos de usuario
+function updateUserUI(user) {
+    const loginBtnItem = document.getElementById('loginBtnItem');
+    const userNameItem = document.getElementById('userNameItem');
+    const userName = document.getElementById('userName');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (!user) {
+        // Si no hay usuario, mostrar botón de login
+        if (loginBtnItem) loginBtnItem.style.display = 'block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (userNameItem) userNameItem.style.display = 'none';
+        return;
+    }
+    
+    // Si hay usuario, mostrar información
+    if (loginBtnItem) loginBtnItem.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'block';
+    if (userNameItem && userName) {
+        userNameItem.style.display = 'block';
+        userName.textContent = user.name;
+    }
+    
+    // Actualizar botones de planes
+    updatePlanButtons();
+}
+
+// Función para actualizar botones de planes
+function updatePlanButtons() {
+    const pricingCards = document.querySelectorAll('.pricing-card');
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    
+    if (!currentUser) return;
+    
+    pricingCards.forEach(card => {
+        const planName = card.querySelector('h3').textContent;
+        const button = card.querySelector('button');
+        
+        if (currentUser.plan === planName) {
+            button.textContent = 'Usar';
+            button.onclick = function() {
+                window.location.href = '/app';
+            };
+        } else {
+            button.textContent = 'Contratar';
+            button.onclick = function() {
+                openPayment(planName, getPlanPrice(planName));
+            };
+        }
+    });
+}
+
+
+// Función para cerrar sesión
+function logoutUser() {
+    fetch('/api/logout')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Limpiar sessionStorage
+            sessionStorage.removeItem('currentUser');
+            // Actualizar UI
+            updateUserUI(null);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cerrar sesión');
+    });
+}
+
+// Agregar estas funciones para mostrar/ocultar vistas de autenticación
 function showLoginView() {
     document.getElementById('loginView').classList.add('active');
     document.getElementById('registerView').classList.remove('active');
 }
 
-// Mostrar vista de registro
 function showRegisterView() {
     document.getElementById('registerView').classList.add('active');
     document.getElementById('loginView').classList.remove('active');
 }
 
-// Cerrar sesión
-function logoutUser() {
-    event.preventDefault();
-    
-    sessionStorage.removeItem('loggedIn');
-    sessionStorage.removeItem('currentUser');
-    alert('Sesión cerrada correctamente');
-    updateUserUI();
-
-    window.location.href = 'landpage.html';
-}
-
-// Actualizar UI según estado de sesión
-function updateUserUI() {
-    const isLoggedIn = sessionStorage.getItem('loggedIn') === 'true';
-    const user = isLoggedIn ? JSON.parse(sessionStorage.getItem('currentUser')) : null;
-    
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    
-    if (loginBtn) {
-        loginBtn.textContent = isLoggedIn ? user.name : 'Iniciar Sesión';
-        loginBtn.onclick = isLoggedIn ? null : openLogin;
-        
-        // Eliminar el href si está logueado para evitar redirección
-        if (isLoggedIn) {
-            loginBtn.removeAttribute('href');
-            loginBtn.style.cursor = 'default';
-        } else {
-            loginBtn.href = '#';
-        }
-    }
-    
-    if (logoutBtn) {
-        logoutBtn.style.display = isLoggedIn ? 'block' : 'none';
-    }
-
-    // Actualizar botones de planes
-    updatePlanButtons();
-}
-
-// En el evento DOMContentLoaded:
+// Al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    updateUserUI();
+    // Solo verificar estado del usuario
+    // Resetear el flag al cargar la página
+    sessionStorage.removeItem('statusChecked');
     
-    // Tabs de login
+    // Verificar estado del usuario solo una vez
+    checkUserStatus();
+
+    // Agregar event listener al botón de login
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openLogin();
+        });
+    }
+    
+    // Resto del código (sin llamar a updateUserUI ni updatePlanButtons directamente)
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             switchLoginTab(btn.dataset.tab);
         });
     });
     
-    // Cerrar modal al hacer clic fuera
     window.addEventListener('click', function(event) {
         const modal = document.getElementById('loginModal');
         if (event.target === modal) {
             closeLogin();
         }
     });
-    
-    // Inicializar botones de planes
-    updatePlanButtons();
+    // ...existing code...
 });
