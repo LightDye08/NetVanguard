@@ -10,26 +10,31 @@
 </head>
 <body>
     <!-- Header -->
-    <header>
-        <nav class="navbar">
-           <!-- Logo modificado con clases para animación -->
-<div class="logo logo-float" id="mainLogo">
-    <img src="assets/logo.svg" alt="Logo NetVanguard">
-</div>
-
-            <ul class="nav-links">
-                <li><a href="#features">Servicios</a></li>
-                <li><a href="#pricing">Precios</a></li>
-                <li><a href="#portfolio">Portafolio</a></li>
-                <li><a href="#testimonials">Testimonios</a></li>
-                <li><a href="#contact">Contacto</a></li>
-                <li><a href="#" id="loginBtn">Iniciar Sesión</a></li>
-                <li id="logoutBtn" style="display:none;">
-                    <a href="javascript:void(0)" onclick="logoutUser()">Cerrar Sesión</a>
-                </li>
-            </ul>
-        </nav>
-    </header>
+   <header>
+    <nav class="navbar">
+        <div class="logo logo-float" id="mainLogo">
+            <img src="assets/logo.svg" alt="Logo NetVanguard">
+        </div>
+        <ul class="nav-links">
+            <li><a href="#features">Servicios</a></li>
+            <li><a href="#pricing">Precios</a></li>
+            <li><a href="#portfolio">Portafolio</a></li>
+            <li><a href="#testimonials">Testimonios</a></li>
+            <li><a href="#contact">Contacto</a></li>
+            
+            <!-- Elementos de usuario -->
+            <li id="userNameItem" style="display:none;">
+                <a href="#" id="userName">Usuario</a>
+            </li>
+            <li id="loginBtnItem">
+                <a href="#" id="loginBtn">Iniciar Sesión</a>
+            </li>
+            <li id="logoutBtn" style="display:none;">
+                <a href="javascript:void(0)" onclick="logoutUser()">Cerrar Sesión</a>
+            </li>
+        </ul>
+    </nav>
+</header>
 
     <!-- Hero Section actualizada -->
 <section class="hero">
@@ -433,5 +438,28 @@
 </div>
 
     <script src="js/javascript_landpage.js"></script>
+    <!-- En el script de landpage.html -->
+<script>
+// Al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Solo verificar estado del usuario si hay indicios de sesión
+    if (sessionStorage.getItem('currentUser')) {
+        fetch('/api/user-status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.logged_in) {
+                sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                updateUserUI(data.user);
+            }
+        });
+    }
+    
+    // Verificar si debemos mostrar precios
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('show') === 'pricing') {
+        setTimeout(scrollToPricing, 500);
+    }
+});
+</script>
 </body>
 </html>
