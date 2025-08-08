@@ -1,3 +1,6 @@
+## ADVERTENCIA: ESTO ES UN PROYECTO UNIVERSITARIO NO ES UN PRODUCTO REAL
+
+
 # NetVanguard - Plataforma de Creación de Sitios Web
 
 ![NetVanguard Logo](frontend/assets/logo.svg)
@@ -7,7 +10,7 @@ NetVanguard es una plataforma integral para creación de sitios web que combina 
 ## Características principales
 
 - ✅ **Gestión de usuarios segura**: Registro y autenticación con hash PBKDF2
-- 💳 **Sistema de planes escalable**: Selección y pago de planes de servicio
+- 💳 **Sistema de planes escalable**: Selección y pago de planes de servicio (Simulado)
 - 🎨 **Editor visual avanzado**: Creación de sitios web con vista previa en tiempo real
 - 📥 **Exportación de código**: Generación de HTML/CSS/JS listo para implementar
 - 📱 **Previsualización responsive**: Adaptación a dispositivos móviles, tablets y escritorio
@@ -130,4 +133,6 @@ Las contribuciones son bienvenidas. Sigue estos pasos:
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT - consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+Este proyecto está bajo la Licencia MIT - hecho por Oscar Jesús Trejo Rocha 
+Universidad Aútonoma de Chihuahua
