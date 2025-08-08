@@ -1,6 +1,6 @@
 # NetVanguard - Plataforma de Creación de Sitios Web
 
-![NetVanguard Logo](assets/logo.svg)
+![NetVanguard Logo](frontend/assets/logo.svg)
 
 NetVanguard es una plataforma integral para creación de sitios web que combina un sistema de gestión de usuarios con un editor visual avanzado. Permite a los usuarios crear sitios web profesionales mediante plantillas personalizables y exportar el código resultante.
 
