@@ -64,26 +64,60 @@ def static_files(path):
 
 # API: Registro de usuario (modificado)
 @app.route('/api/register', methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
-    if not name or not email or not password:
-        return jsonify({'error': 'Missing fields'}), 400
-    if User.query.filter_by(email=email).first():
-        return jsonify({'error': 'Email already registered'}), 400
-    hashed_password = generate_password_hash(password)
-    new_user = User(name=name, email=email, password=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
-    session['user_id'] = new_user.id
-    
-    # Cambio clave: No redirigir a /app, sino devolver éxito
-    return jsonify({
-        'success': True,
-        'redirect': '/pricing'  # Redirigir a la sección de precios
-    }), 201
+    try:
+        data = request.get_json()
+        app.logger.debug(f"Register request received: {data}")
+        
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        
+        app.logger.debug(f"Parsed fields - Name: {name}, Email: {email}, Password: {password}")
+        
+        if not name or not email or not password:
+            app.logger.warning("Missing fields in registration")
+            return jsonify({'error': 'Missing fields'}), 400
+            
+        # Verificar si el usuario ya existe
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            app.logger.warning(f"Email already registered: {email}")
+            return jsonify({'error': 'Email already registered'}), 400
+        
+        hashed_password = generate_password_hash(password)
+        new_user = User(name=name, email=email, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        app.logger.info(f"User created successfully: ID={new_user.id}, Email={new_user.email}")
+        
+        # Iniciar sesión para el usuario
+        session['user_id'] = new_user.id
+        
+        # Crear respuesta
+        user_data = {
+            'id': new_user.id,
+            'name': new_user.name,
+            'email': new_user.email,
+            'plan': new_user.plan  # None por defecto
+        }
+        
+        response_data = {
+            'success': True,
+            'user': user_data,
+            'redirect': '/pricing?show=pricing'  # Redirigir a pricing
+        }
+        
+        app.logger.debug(f"Registration successful. Response: {response_data}")
+        
+        return jsonify(response_data), 201
+        
+    except Exception as e:
+        app.logger.error(f"Error during registration: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+
 
 # API: Inicio de sesión
 @app.route('/api/login', methods=['POST'])
@@ -98,16 +132,26 @@ def login():
     
     session['user_id'] = user.id
     
-    # Redirigir según si tiene plan o no
+    # Crear objeto de usuario para la respuesta
+    user_data = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'plan': user.plan
+    }
+    
+    # Redirigir con datos de usuario
     if user.plan:
         return jsonify({
             'success': True,
-            'redirect': '/app'
+            'redirect': '/app',
+            'user': user_data  # Incluir datos del usuario
         })
     else:
         return jsonify({
             'success': True,
-            'redirect': '/pricing'
+            'redirect': '/pricing',
+            'user': user_data  # Incluir datos del usuario
         })
 
 # API: Cerrar sesión
