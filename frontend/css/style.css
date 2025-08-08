@@ -121,6 +121,39 @@ body {
     background: white;
 }
 
+.payment-success {
+    text-align: center;
+    padding: 2rem;
+}
+
+.payment-success i {
+    font-size: 4rem;
+    color: var(--success);
+    margin-bottom: 1.5rem;
+}
+
+.payment-success h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: var(--success);
+}
+
+.payment-success p {
+    margin-bottom: 1rem;
+    color: #cbd5e1;
+}
+
+.countdown {
+    margin: 1.5rem 0;
+    font-size: 1.1rem;
+    color: #94a3b8;
+}
+
+#countdown {
+    font-weight: bold;
+    color: var(--accent);
+}
+
 .editor-actions {
     display: flex;
     justify-content: center;
