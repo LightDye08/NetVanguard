@@ -337,10 +337,9 @@
             <div class="payment-success" id="paymentSuccess">
                 <i class="fas fa-check-circle"></i>
                 <h3>¡Pago Completado con Éxito!</h3>
-                <p>Gracias por tu compra. Nos pondremos en contacto contigo en las próximas 24 horas para comenzar con tu proyecto.</p>
-                <p>Número de transacción: <strong>WEB-<span id="transactionId">0000</span></strong></p>
-                <button class="btn" onclick="closePayment()">Cerrar</button>
-            </div>
+                <p>Actualizando tu cuenta...</p>
+            <div class="loader"></div>
+        </div>
         </div>
     </div>
 
@@ -392,7 +391,32 @@
         </div>
     </footer>
 
-    <!-- En landpage.html, después del footer -->
+    <script>
+    function updatePlanButtons() {
+        const pricingCards = document.querySelectorAll('.pricing-card');
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        
+        pricingCards.forEach(card => {
+            const planName = card.querySelector('h3').textContent;
+            const button = card.querySelector('button');
+            
+            if (currentUser && currentUser.plan === planName) {
+                button.textContent = 'Usar';
+                button.onclick = function() {
+                    // Redirigir a la aplicación principal
+                window.location.href = '/app';
+            };
+        } else {
+            button.textContent = 'Contratar';
+            button.onclick = function() {
+                openPayment(planName, getPlanPrice(planName));
+            };
+        }
+    });
+}
+</script>
+
+<!-- En landpage.html, después del footer -->
 <!-- Login Modal -->
 <div class="login-modal" id="loginModal">
     <div class="login-content">
