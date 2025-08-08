@@ -40,7 +40,7 @@ NetVanguard es una plataforma integral para creación de sitios web que combina 
 
 1. **Clonar el repositorio**:
    ```bash
-   git clone https://github.com/tu-usuario/netvanguard.git
+   git clone https://github.com/LightDye08/NetVanguard
    cd netvanguard
    ```
 
