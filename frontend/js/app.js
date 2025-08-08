@@ -111,16 +111,8 @@ function initApp() {
 
 // Función para cerrar sesión en la aplicación principal
 function logoutUser() {
-    fetch('/api/logout')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Limpiar sessionStorage
-            sessionStorage.removeItem('currentUser');
-            // Redirigir a la página principal
-            window.location.href = '/';
-        }
-    });
+  // Solo redirigir a la página principal sin cerrar sesión
+  window.location.href = '/';
 }
 
 function initEditor() {
