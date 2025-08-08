@@ -190,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
-// Función para iniciar sesión (corregida)
 function loginUser() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -208,13 +207,9 @@ function loginUser() {
             updateUserUI(data.user);
             closeLogin();
             
-            // Verificar si hay redirección definida
+            // Redirigir según la respuesta del servidor
             if (data.redirect) {
                 window.location.href = data.redirect;
-            } else if (data.user && data.user.plan) {
-                window.location.href = '/app';
-            } else {
-                window.location.href = '/pricing';
             }
         } else {
             alert(data.error || 'Credenciales incorrectas');
@@ -383,79 +378,7 @@ function markPlanAsUsed(planName) {
     }
 }
 
-// Registro de usuario
-function registerUser() {
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
-    const confirm = document.getElementById('registerConfirm').value;
 
-    sessionStorage.removeItem('statusChecked');
-    
-    if (password !== confirm) {
-        alert('Las contraseñas no coinciden');
-        return;
-    }
-    
-    fetch('/api/register', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name, email, password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Guardar usuario en sessionStorage
-            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-            updateUserUI(data.user);
-            // Redirigir a la aplicación principal
-            window.location.href = '/app';
-        } else {
-            alert(data.error || 'Error al registrar');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al registrar');
-    });
-}
-
-// Inicio de sesión
-function loginUser() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    fetch('/api/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-            updateUserUI(data.user);
-            closeLogin();
-            
-            // Solo redirigir si no tiene plan
-            if (!data.user.plan) {
-                window.location.href = '/pricing';
-                setTimeout(scrollToPricing, 500);
-            }
-            // Si tiene plan, permanecer en la página actual
-        } else {
-            alert(data.error || 'Credenciales incorrectas');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al iniciar sesión');
-    });
-}
 
 // Función para cerrar sesión
 function logoutUser() {
