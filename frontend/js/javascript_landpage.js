@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
-// Inicio de sesión
+// Función para iniciar sesión (corregida)
 function loginUser() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -203,18 +203,26 @@ function loginUser() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Guardar usuario en sessionStorage
             sessionStorage.setItem('currentUser', JSON.stringify(data.user));
             updateUserUI(data.user);
             closeLogin();
             
-            if (data.user.plan) {
-                alert('Sesión iniciada. Ya tienes un plan activo.');
+            // Verificar si hay redirección definida
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else if (data.user && data.user.plan) {
+                window.location.href = '/app';
             } else {
-                alert('Sesión iniciada. Ahora puedes seleccionar un plan.');
+                window.location.href = '/pricing';
             }
         } else {
             alert(data.error || 'Credenciales incorrectas');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al iniciar sesión');
     });
 }
 
@@ -250,25 +258,26 @@ function checkUserStatus() {
 
 // Función para actualizar UI y manejar redirecciones
 function updateUIAndRedirect(data) {
-    if (data.logged_in) {
-        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-        updateUserUI(data.user);
-        updatePlanButtons();
-        
-        // Redirigir solo si es necesario
-        const currentPath = window.location.pathname;
-        if (data.user.plan && currentPath !== '/app') {
-            window.location.href = '/app';
-        } else if (!data.user.plan && currentPath !== '/pricing') {
-            window.location.href = '/pricing';
+    // Solo procesar si no hemos verificado antes
+    if (sessionStorage.getItem('statusChecked') !== 'true') {
+        if (data.logged_in) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            updateUserUI(data.user);
+
+            // SOLO redirigir si estamos en una ruta protegida y no tenemos plan
+            const currentPath = window.location.pathname;
+            if (!data.user.plan && currentPath !== '/pricing') {
+                window.location.href = '/pricing';
+            }
+            // No redirigir si ya tenemos plan
+        } else {
+            updateUserUI(null);
+            const currentPath = window.location.pathname;
+            if (currentPath === '/app' || currentPath === '/pricing') {
+                window.location.href = '/';
+            }
         }
-    } else {
-        updateUserUI(null);
-        // Solo redirigir desde rutas protegidas
-        const currentPath = window.location.pathname;
-        if (currentPath === '/app' || currentPath === '/pricing') {
-            window.location.href = '/';
-        }
+        sessionStorage.setItem('statusChecked', 'true');
     }
 }
 
@@ -284,14 +293,14 @@ function processPayment(method) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Actualizar UI con nuevo plan
-            const user = JSON.parse(sessionStorage.getItem('currentUser'));
-            if (user) {
-                user.plan = plan;
-                sessionStorage.setItem('currentUser', JSON.stringify(user));
-                updateUserUI(user);
-                updatePlanButtons();
-            }
+            // Actualizar el usuario en sessionStorage
+            const user = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+            user.plan = plan;
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // Actualizar UI
+            updateUserUI(user);
+            updatePlanButtons();
             
             // Mostrar éxito
             document.getElementById('paymentForm').style.display = 'none';
@@ -300,6 +309,11 @@ function processPayment(method) {
             // Generar ID de transacción ficticio
             const transactionId = 'WEB-' + Math.floor(1000 + Math.random() * 9000);
             document.getElementById('transactionId').textContent = transactionId;
+            
+            // Redirigir después de 3 segundos
+            setTimeout(() => {
+                window.location.href = '/app';
+            }, 3000);
         }
     });
 }
@@ -423,18 +437,16 @@ function loginUser() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Guardar usuario en sessionStorage
             sessionStorage.setItem('currentUser', JSON.stringify(data.user));
             updateUserUI(data.user);
+            closeLogin();
             
-            // Redirigir según si tiene plan o no
-            if (data.user.plan) {
-                window.location.href = data.redirect || '/app';
-            } else {
-                // Mostrar sección de precios
+            // Solo redirigir si no tiene plan
+            if (!data.user.plan) {
                 window.location.href = '/pricing';
                 setTimeout(scrollToPricing, 500);
             }
+            // Si tiene plan, permanecer en la página actual
         } else {
             alert(data.error || 'Credenciales incorrectas');
         }
@@ -451,26 +463,28 @@ function logoutUser() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            sessionStorage.removeItem('currentUser');
-            updateUserUI(null);
-            alert('Sesión cerrada correctamente');
+            // Redirigir a la página principal
+            window.location.href = '/';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al cerrar sesión');
     });
 }
 
+
 // Al cargar la página, solo actualizar UI
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar estado del usuario solo para actualizar UI
-    fetch('/api/user-status')
-    .then(response => response.json())
-    .then(data => {
-        if (data.logged_in) {
-            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-            updateUserUI(data.user);
+    // Actualizar el usuario en sessionStorage
+            fetch('/api/user-status')
+            .then(response => response.json())
+            .then(userData => {
+                if (userData.logged_in) {
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData.user));
+                    
+                    // Actualizar UI y botones de planes
+                    updateUserUI(userData.user);
+                    updatePlanButtons();
         }
     });
     
@@ -522,15 +536,17 @@ function updateUIAndRedirect(data) {
         if (data.logged_in) {
             sessionStorage.setItem('currentUser', JSON.stringify(data.user));
             updateUserUI(data.user);
-            
-            if (data.user.plan && window.location.pathname !== '/app') {
-                window.location.href = '/app';
-            } else if (!data.user.plan && window.location.pathname !== '/pricing') {
+
+            // SOLO redirigir si estamos en una ruta protegida y no tenemos plan
+            const currentPath = window.location.pathname;
+            if (!data.user.plan && currentPath !== '/pricing') {
                 window.location.href = '/pricing';
             }
+            // No redirigir si ya tenemos plan
         } else {
             updateUserUI(null);
-            if (window.location.pathname === '/app' || window.location.pathname === '/pricing') {
+            const currentPath = window.location.pathname;
+            if (currentPath === '/app' || currentPath === '/pricing') {
                 window.location.href = '/';
             }
         }
@@ -578,8 +594,9 @@ function updatePlanButtons() {
         const button = card.querySelector('button');
         
         if (currentUser.plan === planName) {
-            button.textContent = 'Usar';
+            button.textContent = 'Seleccionar';
             button.onclick = function() {
+                // Redirigir a la aplicación principal
                 window.location.href = '/app';
             };
         } else {
@@ -600,8 +617,27 @@ function logoutUser() {
         if (data.success) {
             // Limpiar sessionStorage
             sessionStorage.removeItem('currentUser');
-            // Actualizar UI
+            
+            // Actualizar UI para mostrar sesión cerrada
             updateUserUI(null);
+            
+            // Mostrar mensaje de confirmación
+            const logoutMessage = document.createElement('div');
+            logoutMessage.className = 'logout-message';
+            logoutMessage.innerHTML = `
+                <p>Sesión cerrada correctamente</p>
+                <button onclick="this.parentElement.remove()">Cerrar</button>
+            `;
+            document.body.appendChild(logoutMessage);
+            
+            // Ocultar mensaje después de 3 segundos
+            setTimeout(() => {
+                if (logoutMessage.parentNode) {
+                    logoutMessage.remove();
+                }
+            }, 3000);
+        } else {
+            alert('Error al cerrar sesión');
         }
     })
     .catch(error => {
